@@ -1,0 +1,35 @@
+name: Lint
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Настраиваем Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Устанавливаем Ruff
+      - name: Install Ruff
+        run: pip install ruff
+
+      # 4. Проверяем код линтером
+      - name: Run Ruff linter
+        run: ruff check .
+        continue-on-error: true
+
+      # 5. Автоматически исправляем найденные ошибки
+      - name: Run Ruff linter with fix
+        run: ruff check . --fix
