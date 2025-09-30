@@ -1,4 +1,4 @@
-name: Lint
+name: Lint and Auto-Fix
 
 on:
   push:
@@ -11,25 +11,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Клонируем репозиторий
+      # 1. Клонируем репозиторий с полным history (для push)
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false  # отключаем встроенные токены GitHub Actions
 
-      # 2. Настраиваем Python
+      # 2. Настройка Git для коммита от CI
+      - name: Set Git user
+        run: |
+          git config user.name "CI Bot"
+          git config user.email "ci-bot@example.com"
+
+      # 3. Устанавливаем Python и Ruff
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 3. Устанавливаем Ruff
       - name: Install Ruff
         run: pip install ruff
 
-      # 4. Проверяем код линтером
-      - name: Run Ruff linter
-        run: ruff check .
-        continue-on-error: true
-
-      # 5. Автоматически исправляем найденные ошибки
-      - name: Run Ruff linter with fix
+      # 5. Автоисправление кода Ruff
+      - name: Run Ruff auto-fix
         run: ruff check . --fix
+
+      # 6. Проверяем, есть ли изменения после автофикса
+      - name: Commit and push changes
+        run: |
+          git add .
+          git diff --cached --exit-code || git commit -m "ci: auto-fix lint issues"
+          git push https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
+
