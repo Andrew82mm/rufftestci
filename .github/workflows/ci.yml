@@ -2,20 +2,20 @@ name: Lint and Auto-Fix
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Клонируем репозиторий с полным history (для push)
+      # 1. Клонируем репозиторий с правами для пуша
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false  # отключаем встроенные токены GitHub Actions
+          persist-credentials: true  # важно для git push без ошибок
 
       # 2. Настройка Git для коммита от CI
       - name: Set Git user
@@ -32,14 +32,14 @@ jobs:
       - name: Install Ruff
         run: pip install ruff
 
-      # 5. Автоисправление кода Ruff
+      # 4. Автоисправление кода Ruff
       - name: Run Ruff auto-fix
         run: ruff check . --fix
 
-      # 6. Проверяем, есть ли изменения после автофикса
+      # 5. Проверяем изменения и пушим обратно
       - name: Commit and push changes
         run: |
           git add .
           git diff --cached --exit-code || git commit -m "ci: auto-fix lint issues"
-          git push https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.ref }}
+          git push
 
